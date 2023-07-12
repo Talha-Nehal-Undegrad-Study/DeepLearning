@@ -23,9 +23,7 @@ except ImportError:
 from torcheval.metrics.functional import multiclass_accuracy, multiclass_precision, multiclass_recall, multiclass_f1_score
 
 # Import utils.py from github
-git clone https://github.com/TalhaAhmed2000/DeepLearning.git
-mv DeepLearning/"Task 1"/python_scripts py_scripts
-from py_scripts import utils
+import utils
 
 device = 'cuda' if torch.cuda.is_available else 'cpu'
 
