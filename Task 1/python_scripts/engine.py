@@ -303,7 +303,7 @@ def train(model: torch.nn.Module,
                           global_step = epoch)
 
 
-      # Add accuracy results to SummaryWriter
+      # Add f1 results to SummaryWriter
       writer.add_scalars(main_tag = "F1 Score",
                           tag_scalar_dict={"train_f1": train_f1,
                                           "test_f1": test_f1},
