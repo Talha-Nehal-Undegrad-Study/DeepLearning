@@ -16,9 +16,11 @@ from typing import Dict, List, Tuple
 # Importing torcheval for accuracy, precision and recall metrics
 try:
     import torcheval
-except:
-    pip install -q torcheval
-    from torcheval.metrics.functional import multiclass_accuracy, multiclass_precision, multiclass_recall, multiclass_f1score
+except ImportError:
+    print("[INFO] Installing torcheval...")
+    subprocess.check_call(['pip', 'install', 'torcheval'])
+
+from torcheval.metrics.functional import multiclass_accuracy, multiclass_precision, multiclass_recall, multiclass_f1_score
 
 # Import utils.py from github
 git clone https://github.com/TalhaAhmed2000/DeepLearning.git
@@ -92,7 +94,7 @@ def train_step(model: torch.nn.Module,
       train_accuracy += multiclass_accuracy(y_pred_class, y)
       train_precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
       train_recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-      train_f1 += multiclass_f1score(train_precision, train_recall, average = 'macro', num_classes = num_classes)
+      train_f1 += multiclass_f1_score(train_precision, train_recall, average = 'macro', num_classes = num_classes)
 
     # Calculate each loss and each metric per batch
     train_loss = train_loss / len(dataloader)
@@ -163,7 +165,7 @@ def test_step(model: torch.nn.Module,
         test_accuracy += multiclass_accuracy(y_pred_class, y)
         test_precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
         test_recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-        test_f1 += multiclass_f1score(test_precision, test_recall, average = 'macro', num_classes = num_classes)
+        test_f1 += multiclass_f1_score(test_precision, test_recall, average = 'macro', num_classes = num_classes)
 
     # Calculate each loss and each metric per batch
     test_loss = test_loss / len(dataloader)
@@ -362,7 +364,7 @@ def eval_model(model: torch.nn.Module,
         accuracy += multiclass_accuracy(y_pred_class, y)
         precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
         recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-        f1 += multiclass_f1score(precision, recall, average = 'macro', num_classes = num_classes)
+        f1 += multiclass_f1_score(precision, recall, average = 'macro', num_classes = num_classes)
 
       # Scale loss and acc
       loss /= len(data_loader)
