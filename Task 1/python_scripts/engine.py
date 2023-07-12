@@ -116,7 +116,7 @@ def train_step(model: torch.nn.Module,
 
 # Testing function
 
-# Very similar to test_step above
+# Very similar to train_step above
 
 def test_step(model: torch.nn.Module,
                dataloader: torch.utils.data.DataLoader,
@@ -291,7 +291,7 @@ def train(model: torch.nn.Module,
       results["test_recall"].append(test_recall)
       results["test_f1"].append(test_f1)
 
-      ### New: Experiment tracking ###
+      ### Experiment tracking on Tensorboard ###
       # Add loss results to SummaryWriter
       writer.add_scalars(main_tag = "Loss",
                           tag_scalar_dict = {"train_loss": train_loss,
@@ -380,7 +380,7 @@ def eval_model(model: torch.nn.Module,
       precision /= len(data_loader)
       recall /= len(data_loader)
       f1 /= len(data_loader)
-    return {"model_name": model.__class__.__name__, # only works when model was created with a class
+    return {"model_name": model.__class__.__name__,
             "model_loss": loss.item(),
             "model_accuracy": accuracy,
             "model_precision": precision,
