@@ -54,11 +54,11 @@ def getImageFolderDataLoaders(train_dir: str,
   
   # Get Custom Dataset
   train_data = datasets.ImageFolder(root = train_dir,
-                                    transform = test_transform) 
+                                    transform = transform) 
                                     
 
   test_data = datasets.ImageFolder(root = test_dir,
-                                  transform = test_transform)
+                                  transform = transform)
 
   # Get Dataloaders  
   train_dataloader = DataLoader(dataset = train_data,
