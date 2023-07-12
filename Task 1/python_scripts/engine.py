@@ -182,7 +182,9 @@ def train(model: torch.nn.Module,
           loss_fn: torch.nn.Module,
           num_classes: int,
           epochs: int,
-          device: torch.device) -> Dict[str, List]:
+          device: torch.device,
+          writer: torch.utils.tensorboard.writer.SummaryWrite) -> Dict[str, List]:
+              
     """Trains and tests a PyTorch model.
 
     Passes a target PyTorch models through train_step() and test_step()
@@ -242,9 +244,6 @@ def train(model: torch.nn.Module,
 
     # Make sure model on target device
     model.to(device)
-
-    # Intializing tensorboard writer
-    writer = SummaryWriter()
 
     # Start Timer
     start_time = timer()
@@ -317,7 +316,7 @@ def train(model: torch.nn.Module,
       # Track the PyTorch model architecture
       writer.add_graph(model = model,
                         # Pass in an example input
-                        input_to_model = torch.randn(32, 3, 1024, 1024).to(device))
+                        input_to_model = torch.randn(32, 3, 256, 256).to(device))
     # close writer
     writer.close()
 
