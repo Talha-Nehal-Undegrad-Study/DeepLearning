@@ -86,11 +86,13 @@ def train_step(model: torch.nn.Module,
       # Calculate the predicted class using softmax since multi-class and then taking argmax (on the dim = 1 since 0 corresponds to batch)
       y_pred_class = torch.argmax(torch.softmax(y_logits, dim = 1), dim = 1)
 
+      # Get num_classes as the number of unique elements in y
+      num_classes = len(torch.unique(y))  
       # Calculate Evaluation Metrics
       train_accuracy += multiclass_accuracy(y_pred_class, y)
       train_precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
       train_recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-      train_f1 += multiclass_f1score(train_precision, train_recall)/len(y_pred_class)
+      train_f1 += multiclass_f1score(train_precision, train_recall, average = 'macro', num_classes = num_classes)
 
     # Calculate each loss and each metric per batch
     train_loss = train_loss / len(dataloader)
@@ -153,12 +155,15 @@ def test_step(model: torch.nn.Module,
         loss = loss_fn(y_logits, y)
         test_loss += loss.item()
 
+        # Get num_classes as the number of unique elements in y
+        num_classes = len(torch.unique(y))
+          
         # Calculate the predicted class using softmax since multi-class and then taking argmax (on the dim = 1 since 0 corresponds to batch)
         y_pred_class = torch.argmax(torch.softmax(y_logits, dim = 1), dim = 1)
         test_accuracy += multiclass_accuracy(y_pred_class, y)
         test_precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
         test_recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-        test_f1 += multiclass_f1score(test_precision, test_recall)/len(y_pred_class)
+        test_f1 += multiclass_f1score(test_precision, test_recall, average = 'macro', num_classes = num_classes)
 
     # Calculate each loss and each metric per batch
     test_loss = test_loss / len(dataloader)
@@ -350,12 +355,15 @@ def eval_model(model: torch.nn.Module,
         X, y = X.to(device), y.to(device)
         y_pred, _ = model(X)
         loss += loss_fn(y_pred, y)
-
+          
+        # Get num_classes as the number of unique elements in y
+        num_classes = len(torch.unique(y))
+          
         y_pred_class = torch.argmax(torch.softmax(y_pred, dim = 1), dim = 1)
         accuracy += multiclass_accuracy(y_pred_class, y)
         precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
         recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-        f1 += multiclass_f1score(precision, recall)
+        f1 += multiclass_f1score(precision, recall, average = 'macro', num_classes = num_classes)
 
       # Scale loss and acc
       loss /= len(data_loader)
