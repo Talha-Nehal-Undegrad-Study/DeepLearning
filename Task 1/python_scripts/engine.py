@@ -12,6 +12,8 @@ from tqdm.auto import tqdm
 from timeit import default_timer as timer
 from torch.utils.tensorboard import SummaryWriter
 from typing import Dict, List, Tuple
+import subprocess
+import sys
 
 # Importing torcheval for accuracy, precision and recall metrics
 try:
@@ -23,7 +25,15 @@ except ImportError:
 from torcheval.metrics.functional import multiclass_accuracy, multiclass_precision, multiclass_recall, multiclass_f1_score
 
 # Import utils.py from github
-import utils
+
+try:
+    import utils
+except ImportError:
+    print("[INFO] Cloning the repository and importing utils script...")
+    subprocess.run(["git", "clone", "https://github.com/TalhaAhmed2000/DeepLearning.git"])
+    subprocess.run(["mv", "DeepLearning/Task 1/python_scripts", "py_scripts"])
+    sys.path.append('py_scripts')
+    import utils
 
 device = 'cuda' if torch.cuda.is_available else 'cpu'
 
@@ -183,7 +193,7 @@ def train(model: torch.nn.Module,
           num_classes: int,
           epochs: int,
           device: torch.device,
-          writer: torch.utils.tensorboard.writer.SummaryWrite) -> Dict[str, List]:
+          writer: torch.utils.tensorboard.writer.SummaryWriter) -> Dict[str, List]:
               
     """Trains and tests a PyTorch model.
 
