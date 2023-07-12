@@ -1,11 +1,5 @@
 
-import torch
 import numpy as np
-
-# Python script for helpful functions we will be needing throughtout these tasks
-
-def multiclass_f1score(prec: torch.Tensor, recall: torch.Tensor) -> torch.float:
-  return (2 * prec * recall)/(prec + recall)
 
 # Defining a function to print the time taken to train a model
 def time_taken(start, end):
