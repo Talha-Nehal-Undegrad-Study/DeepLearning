@@ -1,5 +1,6 @@
 
 import torch
+import torchvision
 from torchvision import datasets, transforms
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
@@ -53,11 +54,11 @@ def getImageFolderDataLoaders(train_dir: str,
   
   # Get Custom Dataset
   train_data = datasets.ImageFolder(root = train_dir,
-                                    transform = test_transform) 
+                                    transform = transform) 
                                     
 
   test_data = datasets.ImageFolder(root = test_dir,
-                                  transform = test_transform)
+                                  transform = transform)
 
   # Get Dataloaders  
   train_dataloader = DataLoader(dataset = train_data,
