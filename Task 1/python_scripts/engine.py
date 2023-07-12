@@ -12,18 +12,28 @@ from tqdm.auto import tqdm
 from timeit import default_timer as timer
 from torch.utils.tensorboard import SummaryWriter
 from typing import Dict, List, Tuple
+import subprocess
+import sys
 
 # Importing torcheval for accuracy, precision and recall metrics
 try:
     import torcheval
-except:
-    !pip install -q torcheval
-    from torcheval.metrics.functional import multiclass_accuracy, multiclass_precision, multiclass_recall, multiclass_f1score
+except ImportError:
+    print("[INFO] Installing torcheval...")
+    subprocess.check_call(['pip', 'install', 'torcheval'])
+
+from torcheval.metrics.functional import multiclass_accuracy, multiclass_precision, multiclass_recall, multiclass_f1_score
 
 # Import utils.py from github
-!git clone https://github.com/TalhaAhmed2000/DeepLearning.git
-!mv DeepLearning/"Task 1"/python_scripts py_scripts
-from py_scripts import utils
+
+try:
+    import utils
+except ImportError:
+    print("[INFO] Cloning the repository and importing utils script...")
+    subprocess.run(["git", "clone", "https://github.com/TalhaAhmed2000/DeepLearning.git"])
+    subprocess.run(["mv", "DeepLearning/Task 1/python_scripts", "py_scripts"])
+    sys.path.append('py_scripts')
+    import utils
 
 device = 'cuda' if torch.cuda.is_available else 'cpu'
 
@@ -86,11 +96,13 @@ def train_step(model: torch.nn.Module,
       # Calculate the predicted class using softmax since multi-class and then taking argmax (on the dim = 1 since 0 corresponds to batch)
       y_pred_class = torch.argmax(torch.softmax(y_logits, dim = 1), dim = 1)
 
+      # Get num_classes as the number of unique elements in y
+      num_classes = len(torch.unique(y))  
       # Calculate Evaluation Metrics
       train_accuracy += multiclass_accuracy(y_pred_class, y)
       train_precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
       train_recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-      train_f1 += multiclass_f1score(train_precision, train_recall)/len(y_pred_class)
+      train_f1 += multiclass_f1_score(train_precision, train_recall, average = 'macro', num_classes = num_classes)
 
     # Calculate each loss and each metric per batch
     train_loss = train_loss / len(dataloader)
@@ -153,12 +165,15 @@ def test_step(model: torch.nn.Module,
         loss = loss_fn(y_logits, y)
         test_loss += loss.item()
 
+        # Get num_classes as the number of unique elements in y
+        num_classes = len(torch.unique(y))
+          
         # Calculate the predicted class using softmax since multi-class and then taking argmax (on the dim = 1 since 0 corresponds to batch)
         y_pred_class = torch.argmax(torch.softmax(y_logits, dim = 1), dim = 1)
         test_accuracy += multiclass_accuracy(y_pred_class, y)
         test_precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
         test_recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-        test_f1 += multiclass_f1score(test_precision, test_recall)/len(y_pred_class)
+        test_f1 += multiclass_f1_score(test_precision, test_recall, average = 'macro', num_classes = num_classes)
 
     # Calculate each loss and each metric per batch
     test_loss = test_loss / len(dataloader)
@@ -177,7 +192,9 @@ def train(model: torch.nn.Module,
           loss_fn: torch.nn.Module,
           num_classes: int,
           epochs: int,
-          device: torch.device) -> Dict[str, List]:
+          device: torch.device,
+          writer: torch.utils.tensorboard.writer.SummaryWriter) -> Dict[str, List]:
+              
     """Trains and tests a PyTorch model.
 
     Passes a target PyTorch models through train_step() and test_step()
@@ -237,9 +254,6 @@ def train(model: torch.nn.Module,
 
     # Make sure model on target device
     model.to(device)
-
-    # Intializing tensorboard writer
-    writer = SummaryWriter()
 
     # Start Timer
     start_time = timer()
@@ -303,7 +317,7 @@ def train(model: torch.nn.Module,
                           global_step = epoch)
 
 
-      # Add accuracy results to SummaryWriter
+      # Add f1 results to SummaryWriter
       writer.add_scalars(main_tag = "F1 Score",
                           tag_scalar_dict={"train_f1": train_f1,
                                           "test_f1": test_f1},
@@ -312,7 +326,7 @@ def train(model: torch.nn.Module,
       # Track the PyTorch model architecture
       writer.add_graph(model = model,
                         # Pass in an example input
-                        input_to_model = torch.randn(32, 3, 1024, 1024).to(device))
+                        input_to_model = torch.randn(32, 3, 256, 256).to(device))
     # close writer
     writer.close()
 
@@ -350,12 +364,15 @@ def eval_model(model: torch.nn.Module,
         X, y = X.to(device), y.to(device)
         y_pred, _ = model(X)
         loss += loss_fn(y_pred, y)
-
+          
+        # Get num_classes as the number of unique elements in y
+        num_classes = len(torch.unique(y))
+          
         y_pred_class = torch.argmax(torch.softmax(y_pred, dim = 1), dim = 1)
         accuracy += multiclass_accuracy(y_pred_class, y)
         precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
         recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-        f1 += multiclass_f1score(precision, recall)
+        f1 += multiclass_f1_score(precision, recall, average = 'macro', num_classes = num_classes)
 
       # Scale loss and acc
       loss /= len(data_loader)
