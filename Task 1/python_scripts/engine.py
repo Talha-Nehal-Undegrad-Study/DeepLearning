@@ -42,7 +42,8 @@ def train_step(model: torch.nn.Module,
                loss_fn: torch.nn.Module,
                optimizer: torch.optim.Optimizer,
                num_classes: int,
-               device: torch.device) -> Tuple[float, float, float, float, float]:
+               device: torch.device,
+               inception = False) -> Tuple[float, float, float, float, float]:
 
     """Trains a PyTorch model for a single epoch.
 
@@ -57,6 +58,9 @@ def train_step(model: torch.nn.Module,
     optimizer: A PyTorch optimizer to help minimize the loss function.
     num_classes: Number of classes (Binary or Multi)
     device: A target device to compute on (e.g. "cuda" or "cpu").
+    inception: A boolean specifying whether the model of interest is 
+    inceptionnet or not. Otherwise, there is a slight modification
+    to the forward pass
 
     Returns:
     A tuple of training loss and training evaluation metrics.
@@ -75,10 +79,14 @@ def train_step(model: torch.nn.Module,
     for batch, (X, y) in enumerate(dataloader):
 
       # Respective Device Transition
-      X, y = X.to(device), y.to(device)
+      X = X.to(device)
+      y = y.to(device)
 
       # Forward Pass (In case of Inception net, we get output and something else but we dont need that as the loss function would give an error otherwise)
-      y_logits, _ = model.forward(X)
+      if inception:
+        y_logits, _ = model.forward(X)
+      else:
+        y_logits = model.forward(X)
 
       # Calculate loss (acumulative)
       loss = loss_fn(y_logits, y)
@@ -122,7 +130,8 @@ def test_step(model: torch.nn.Module,
                dataloader: torch.utils.data.DataLoader,
                loss_fn: torch.nn.Module,
                num_classes: int,
-               device: torch.device) -> Tuple[float, float, float, float, float]:
+               device: torch.device,
+               inception = False) -> Tuple[float, float, float, float, float]:
 
     """tests a PyTorch model for a single epoch.
 
@@ -156,10 +165,13 @@ def test_step(model: torch.nn.Module,
       for batch, (X, y) in enumerate(dataloader):
 
         # Respective Device Transition
-        X, y = X.to(device), y.to(device)
+        X = X.to(device)
+        y = y.to(device)
 
-        # Forward Pass (In case of Inception net, we get output and something else but we dont need that as the loss function would give an error otherwise)
-        y_logits, _ = model.forward(X)
+        if inception:
+          y_logits, _ = model.forward(X)
+        else:
+          y_logits = model.forward(X)
 
         # Calculate loss (acumulative)
         loss = loss_fn(y_logits, y)
@@ -193,7 +205,8 @@ def train(model: torch.nn.Module,
           num_classes: int,
           epochs: int,
           device: torch.device,
-          writer: torch.utils.tensorboard.writer.SummaryWriter) -> Dict[str, List]:
+          writer: torch.utils.tensorboard.writer.SummaryWriter,
+          inception = False) -> Dict[str, List]:
               
     """Trains and tests a PyTorch model.
 
@@ -260,8 +273,8 @@ def train(model: torch.nn.Module,
 
     # Loop through training and testing steps for a number of epochs
     for epoch in tqdm(range(epochs)):
-      train_loss, train_acc, train_precision, train_recall, train_f1 = train_step(model, train_dataloader, loss_fn, optimizer, num_classes, device)
-      test_loss, test_acc, test_precision, test_recall, test_f1 = test_step(model, test_dataloader, loss_fn, num_classes, device)
+      train_loss, train_acc, train_precision, train_recall, train_f1 = train_step(model, train_dataloader, loss_fn, optimizer, num_classes, device, inception = inception)
+      test_loss, test_acc, test_precision, test_recall, test_f1 = test_step(model, test_dataloader, loss_fn, num_classes, device, incpetion = inception)
 
       # Print out what's happening
       print(
@@ -343,7 +356,8 @@ def eval_model(model: torch.nn.Module,
                data_loader: torch.utils.data.DataLoader,
                loss_fn: torch.nn.Module,
                num_classes: int,
-               device: torch.device = device):
+               device: torch.device = device,
+               inception = False):
     """Evaluates a given model on a given dataset.
 
     Args:
@@ -360,9 +374,16 @@ def eval_model(model: torch.nn.Module,
     model.eval()
     with torch.inference_mode():
       for X, y in data_loader:
+        
         # Send data to the target device
-        X, y = X.to(device), y.to(device)
-        y_pred, _ = model(X)
+        X = X.to(device)
+        y = y.to(device)
+
+        if inception:
+          y_pred, _ = model.forward(X)
+        else:
+          y_pred = model.forward(X)
+
         loss += loss_fn(y_pred, y)
           
         # Get num_classes as the number of unique elements in y
