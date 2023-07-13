@@ -7,6 +7,7 @@
 import os
 from PIL import Image
 import torch
+import torchvision
 from torchvision import transforms
 from torchvision import datasets
 from torch.utils.data import Dataset
