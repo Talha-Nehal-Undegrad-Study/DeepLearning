@@ -77,7 +77,7 @@ def train_eval_save(model: torch.nn.Module,
 
   # Save Model
   utils.save_model(model = model_0,
-                  target_dir = 'models',
-                  model_name = 'pet_breed_classifier_V0.pth')
+                  target_dir = target_dir,
+                  model_name = model_name)
   
   return model_results
