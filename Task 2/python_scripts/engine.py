@@ -31,7 +31,7 @@ try:
 except ImportError:
     print("[INFO] Cloning the repository and importing utils script...")
     subprocess.run(["git", "clone", "https://github.com/TalhaAhmed2000/DeepLearning.git"])
-    subprocess.run(["mv", "DeepLearning/Task 1/python_scripts", "py_scripts"])
+    subprocess.run(["mv", "DeepLearning/Task 2/python_scripts", "py_scripts"])
     sys.path.append('py_scripts')
     import utils
 
@@ -41,7 +41,6 @@ def train_step(model: torch.nn.Module,
                dataloader: torch.utils.data.DataLoader,
                loss_fn: torch.nn.Module,
                optimizer: torch.optim.Optimizer,
-               num_classes: int,
                device: torch.device) -> Tuple[float, float, float, float, float]:
 
     """Trains a PyTorch model for a single epoch.
@@ -55,134 +54,110 @@ def train_step(model: torch.nn.Module,
     dataloader: A DataLoader instance for the model to be trained on.
     loss_fn: A PyTorch loss function to minimize.
     optimizer: A PyTorch optimizer to help minimize the loss function.
-    num_classes: Number of classes (Binary or Multi)
     device: A target device to compute on (e.g. "cuda" or "cpu").
 
     Returns:
-    A tuple of training loss and training evaluation metrics.
-    In the form (train_loss, train_accuracy, train_precision, train_recall, train_f1). For example:
+    A tuple of training loss and Dice and IOU evaluation metrics.
+    In the form (train_loss, train_dice, train_iou). For example:
 
-    (0.1112, 0.8743, 0.7813, 0.7945, 0.8441)
+    (0.1112, 0.8743, 0.0749)
     """
-
-    # Put Model in train_mode
+    # Put model in train mode
     model.train()
 
-    # Initialize train loss and other metrics as 0. Per epoch, we will be looking at each of these per batch
-    train_loss, train_accuracy, train_precision, train_recall, train_f1 = 0, 0, 0, 0, 0
+    # Setup train loss and train accuracy values
+    train_loss, train_dice, train_iou = 0, 0, 0
 
-    # Loop through the data loader
-    for batch, (X, y) in enumerate(dataloader):
+    # Loop through data loader data batches
+    for batch, (img, mask) in enumerate(dataloader):
+        # Send data to target device
+        img, mask = img.to(device), mask.to(device)
 
-      # Respective Device Transition
-      X, y = X.to(device), y.to(device)
+        # 1. Forward pass
+        pred_mask = model.forward(img)
 
-      # Forward Pass (In case of Inception net, we get output and something else but we dont need that as the loss function would give an error otherwise)
-      y_logits, _ = model.forward(X)
+        # 2. Calculate  and accumulate loss
+        loss = loss_fn(pred_mask, mask)
+        train_loss += loss.item()
 
-      # Calculate loss (acumulative)
-      loss = loss_fn(y_logits, y)
-      train_loss += loss.item()
+        # 3. Optimizer zero grad
+        optimizer.zero_grad()
 
-      # Reset Optimizer
-      optimizer.zero_grad()
+        # 4. Loss backward
+        loss.backward()
 
-      # BackPropogation
-      loss.backward()
+        # 5. Optimizer step
+        optimizer.step()
 
-      # Optimizer Step
-      optimizer.step()
+        # Calculate and accumulate dice/iou metric across all batches
+        groundtruth_mask = mask.permute(0, 2, 3, 1).cpu().numpy()
+        pred_mask = pred_mask.permute(0, 2, 3, 1).cpu().detach().numpy()
+        dice_coeff = round(utils.dice_coef(groundtruth_mask, pred_mask), 4)
+        iou_coeff = round(utils.iou(groundtruth_mask, pred_mask), 4)
 
-      # Calculate the predicted class using softmax since multi-class and then taking argmax (on the dim = 1 since 0 corresponds to batch)
-      y_pred_class = torch.argmax(torch.softmax(y_logits, dim = 1), dim = 1)
-
-      # Get num_classes as the number of unique elements in y
-      num_classes = len(torch.unique(y))  
-      # Calculate Evaluation Metrics
-      train_accuracy += multiclass_accuracy(y_pred_class, y)
-      train_precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
-      train_recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-      train_f1 += multiclass_f1_score(train_precision, train_recall, average = 'macro', num_classes = num_classes)
-
-    # Calculate each loss and each metric per batch
+    # Adjust metrics to get average loss and accuracy per batch
     train_loss = train_loss / len(dataloader)
-    train_accuracy = train_accuracy / len(dataloader)
-    train_precision = train_precision / len(dataloader)
-    train_recall = train_recall / len(dataloader)
-    train_f1 = train_f1 / len(dataloader)
-
-    return train_loss, train_accuracy, train_precision, train_recall, train_f1
-
+    train_dice = dice_coeff / len(dataloader)
+    train_iou = iou_coeff / len(dataloader)
+    return train_loss, train_dice, train_iou
 
 # Testing function
 
 # Very similar to train_step above
 
 def test_step(model: torch.nn.Module,
-               dataloader: torch.utils.data.DataLoader,
-               loss_fn: torch.nn.Module,
-               num_classes: int,
-               device: torch.device) -> Tuple[float, float, float, float, float]:
+              dataloader: torch.utils.data.DataLoader,
+              loss_fn: torch.nn.Module,
+              device: torch.device) -> Tuple[float, float]:
+    """Tests a PyTorch model for a single epoch.
 
-    """tests a PyTorch model for a single epoch.
-
-    Turns a target PyTorch model to testing mode and then
-    runs through all of the required testing steps (forward
-    pass, loss calculation, optimizer step).
+    Turns a target PyTorch model to "eval" mode and then performs
+    a forward pass on a testing dataset.
 
     Args:
     model: A PyTorch model to be tested.
     dataloader: A DataLoader instance for the model to be tested on.
-    loss_fn: A PyTorch loss function to minimize.
-    optimizer: A PyTorch optimizer to help minimize the loss function.
-    num_classes: Number of classes (Binary or Multi)
+    loss_fn: A PyTorch loss function to calculate loss on the test data.
     device: A target device to compute on (e.g. "cuda" or "cpu").
 
     Returns:
-    A tuple of testing loss and testing evaluation metrics.
-    In the form (test_loss, test_accuracy, test_precision, test_recall, test_f1). For example:
+    A tuple of testing loss and testing dice and iou metrics.
+    In the form (test_loss, test_dice, test_iou). For eimgample:
 
-    (0.1112, 0.8743, 0.7813, 0.7945, 0.8441)
+    (0.0223, 0.8985, 0.6432)
     """
-
-    # Put Model in test_mode
+    # Put model in eval mode
     model.eval()
 
-    # Initialize test loss and other metrics as 0. Per epoch, we will be looking at each of these per batch
-    test_loss, test_accuracy, test_precision, test_recall, test_f1 = 0, 0, 0, 0, 0
+    # Setup test loss and test accuracy values
+    test_loss, test_dice, test_iou = 0, 0, 0
 
-    # Loop through the data loader
+    # Turn on inference conteimgt manager
     with torch.inference_mode():
-      for batch, (X, y) in enumerate(dataloader):
+      # Loop through DataLoader batches
+      for batch, (img, mask) in enumerate(dataloader):
+        # Send data to target device
+        img, mask = img.to(device), mask.to(device)
 
-        # Respective Device Transition
-        X, y = X.to(device), y.to(device)
+        # 1. Forward pass
+        pred_mask = model.forward(img)
 
-        # Forward Pass (In case of Inception net, we get output and something else but we dont need that as the loss function would give an error otherwise)
-        y_logits, _ = model.forward(X)
-
-        # Calculate loss (acumulative)
-        loss = loss_fn(y_logits, y)
+        # 2. Calculate and accumulate loss
+        loss = loss_fn(pred_mask, mask)
         test_loss += loss.item()
 
-        # Get num_classes as the number of unique elements in y
-        num_classes = len(torch.unique(y))
-          
-        # Calculate the predicted class using softmax since multi-class and then taking argmax (on the dim = 1 since 0 corresponds to batch)
-        y_pred_class = torch.argmax(torch.softmax(y_logits, dim = 1), dim = 1)
-        test_accuracy += multiclass_accuracy(y_pred_class, y)
-        test_precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
-        test_recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-        test_f1 += multiclass_f1_score(test_precision, test_recall, average = 'macro', num_classes = num_classes)
+        # Calculate and accumulate accuracy
 
-    # Calculate each loss and each metric per batch
+        groundtruth_mask = mask.permute(0, 2, 3, 1).cpu().numpy()
+        pred_mask = pred_mask.permute(0, 2, 3, 1).cpu().detach().numpy()
+        dice_coeff = round(dice_coef(groundtruth_mask, pred_mask), 4)
+        iou_coeff = round(iou(groundtruth_mask, pred_mask), 4)
+
+    # Adjust metrics to get average loss and accuracy per batch
     test_loss = test_loss / len(dataloader)
-    test_accuracy = test_accuracy / len(dataloader)
-    test_precision = test_precision / len(dataloader)
-    test_recall = test_recall / len(dataloader)
-    test_f1 = test_f1 / len(dataloader)
-
-    return test_loss, test_accuracy, test_precision, test_recall, test_f1
+    test_dice = dice_coeff / len(dataloader)
+    test_iou = iou_coeff / len(dataloader)
+    return test_loss, test_dice, test_iou
 
 # Overall Training Function
 def train(model: torch.nn.Module,
@@ -190,18 +165,16 @@ def train(model: torch.nn.Module,
           test_dataloader: torch.utils.data.DataLoader,
           optimizer: torch.optim.Optimizer,
           loss_fn: torch.nn.Module,
-          num_classes: int,
           epochs: int,
           device: torch.device,
           writer: torch.utils.tensorboard.writer.SummaryWriter) -> Dict[str, List]:
-              
     """Trains and tests a PyTorch model.
 
     Passes a target PyTorch models through train_step() and test_step()
     functions for a number of epochs, training and testing the model
     in the same epoch loop.
 
-    Calculates, prints and stores evaluation metrics throughout as well as adds results to TensorBoard
+    Calculates, prints and stores evaluation metrics throughout.
 
     Args:
     model: A PyTorch model to be trained and tested.
@@ -214,41 +187,29 @@ def train(model: torch.nn.Module,
 
     Returns:
     A dictionary of training and testing loss as well as training and
-    testing accuracy metrics. Each metric has a value in a list for
+    testing dice/iou metrics. Each metric has a value in a list for
     each epoch. Also prints the time taken to train
     In the form: {train_loss: [...],
-              train_acc: [...],
-              train_precision: [...],
-              train_recall: [...],
-              train_f1: [...],
+              train_dice: [...],
+              train_iou: [...],
               test_loss: [...],
-              test_acc: [...],
-              test_precision: [...],
-              test_recall: [...],
-              test_f1: [...]}
+              test_dice: [...],
+              test_iou: [...]}
     For example if training for epochs=2:
              {train_loss: [2.0616, 1.0537],
-              train_acc: [0.3945, 0.3945],
-              train_precision: [0.5321, 0.4556],
-              train_recall: [0.4521, 0.4241],
-              train_f1: [0.3402, 0.4671],
+              train_dice: [0.3945, 0.3945],
+              train_iou: [0.5321, 0.4556],
               test_loss: [1.2641, 1.5706],
-              test_acc: [0.3400, 0.2973],
-              test_precision: [0.4321, 0.3556],
-              test_recall: [0.3521, 0.3241],
-              test_f1: [0.2402, 0.3671]}
+              test_dice: [0.3400, 0.2973],
+              test_iou: [0.4321, 0.3556],
     """
     # Create empty results dictionary
     results = {"train_loss": [],
-              "train_acc": [],
-              "train_precision": [],
-              "train_recall": [],
-              "train_f1": [],
+              "train_dice": [],
+              "train_iou": [],
               "test_loss": [],
-              "test_acc": [],
-              "test_precision": [],
-              "test_recall": [],
-              "test_f1": []
+              "test_dice": [],
+              "test_iou": []
     }
 
 
@@ -260,67 +221,45 @@ def train(model: torch.nn.Module,
 
     # Loop through training and testing steps for a number of epochs
     for epoch in tqdm(range(epochs)):
-      train_loss, train_acc, train_precision, train_recall, train_f1 = train_step(model, train_dataloader, loss_fn, optimizer, num_classes, device)
-      test_loss, test_acc, test_precision, test_recall, test_f1 = test_step(model, test_dataloader, loss_fn, num_classes, device)
+      train_loss, train_dice, train_iou = train_step(model, train_dataloader, loss_fn, optimizer, device)
+      test_loss, test_dice, test_iou = test_step(model, test_dataloader, loss_fn, device)
 
       # Print out what's happening
       print(
         f"Epoch: {epoch+1} | "
         f"train_loss: {train_loss:.4f} | "
-        f"train_acc: {train_acc:.4f} | "
-        f"train_precision: {train_precision:.4f} | "
-        f"train_recall: {train_recall:.4f} | "
-        f"train_f1: {train_f1:.4f} | "
+        f"train_dice: {train_dice:.4f} | "
+        f"train_iou: {train_iou:.4f} | "
         f"test_loss: {test_loss:.4f} | "
-        f"test_acc: {test_acc:.4f} | "
-        f"test_acc: {test_acc:.4f} | "
-        f"test_precision: {test_precision:.4f} | "
-        f"test_recall: {test_recall:.4f} | "
-        f"test_f1: {test_f1:.4f} | "
+        f"test_dice: {test_dice:.4f} | "
+        f"test_iou: {test_iou:.4f} | "
       )
 
       # Update results dictionary
       results["train_loss"].append(train_loss)
-      results["train_acc"].append(train_acc)
-      results["train_precision"].append(train_precision)
-      results["train_recall"].append(train_recall)
-      results["train_f1"].append(train_f1)
+      results["train_dice"].append(train_dice)
+      results["train_iou"].append(train_iou)
       results["test_loss"].append(test_loss)
-      results["test_acc"].append(test_acc)
-      results["test_precision"].append(test_precision)
-      results["test_recall"].append(test_recall)
-      results["test_f1"].append(test_f1)
+      results["test_dice"].append(test_dice)
+      results["test_iou"].append(test_iou)
 
-      ### Experiment tracking on Tensorboard ###
+      ### New: Experiment tracking ###
       # Add loss results to SummaryWriter
       writer.add_scalars(main_tag = "Loss",
                           tag_scalar_dict = {"train_loss": train_loss,
                                           "test_loss": test_loss},
+                          global_step=epoch)
+
+      # Add dice coefficient results to SummaryWriter
+      writer.add_scalars(main_tag = "Dice Coefficient",
+                          tag_scalar_dict={"train_dice": train_dice,
+                                          "test_dice": test_dice},
                           global_step = epoch)
 
-      # Add accuracy results to SummaryWriter
-      writer.add_scalars(main_tag = "Accuracy",
-                          tag_scalar_dict={"train_acc": train_acc,
-                                          "test_acc": test_acc},
-                          global_step = epoch)
-
-      # Add precision results to SummaryWriter
-      writer.add_scalars(main_tag = "Precision",
-                          tag_scalar_dict={"train_precision": train_precision,
-                                          "test_precision": test_precision},
-                          global_step = epoch)
-
-      # Add Recall results to SummaryWriter
-      writer.add_scalars(main_tag = "Recall",
-                          tag_scalar_dict={"train_recall": train_recall,
-                                          "test_recall": test_recall},
-                          global_step = epoch)
-
-
-      # Add f1 results to SummaryWriter
-      writer.add_scalars(main_tag = "F1 Score",
-                          tag_scalar_dict={"train_f1": train_f1,
-                                          "test_f1": test_f1},
+      # Add iou coefficient results to SummaryWriter
+      writer.add_scalars(main_tag = "IOU Coefficient",
+                          tag_scalar_dict={"train_iou": train_iou,
+                                          "test_iou": test_iou},
                           global_step = epoch)
 
       # Track the PyTorch model architecture
@@ -342,7 +281,6 @@ def train(model: torch.nn.Module,
 def eval_model(model: torch.nn.Module,
                data_loader: torch.utils.data.DataLoader,
                loss_fn: torch.nn.Module,
-               num_classes: int,
                device: torch.device = device):
     """Evaluates a given model on a given dataset.
 
@@ -356,33 +294,30 @@ def eval_model(model: torch.nn.Module,
     Returns:
         (dict): Results of model making predictions on data_loader.
     """
-    loss, accuracy, precision, recall, f1 = 0, 0, 0, 0, 0
+                   
+    loss, dice_coeff, iou_coeff = 0, 0, 0
     model.eval()
     with torch.inference_mode():
-      for X, y in data_loader:
+      for img, mask in data_loader:
         # Send data to the target device
-        X, y = X.to(device), y.to(device)
-        y_pred, _ = model(X)
-        loss += loss_fn(y_pred, y)
-          
-        # Get num_classes as the number of unique elements in y
-        num_classes = len(torch.unique(y))
-          
-        y_pred_class = torch.argmax(torch.softmax(y_pred, dim = 1), dim = 1)
-        accuracy += multiclass_accuracy(y_pred_class, y)
-        precision += multiclass_precision(y_pred_class, y, average = 'macro', num_classes = num_classes)
-        recall += multiclass_recall(y_pred_class, y, average = 'micro', num_classes = num_classes)
-        f1 += multiclass_f1_score(precision, recall, average = 'macro', num_classes = num_classes)
+        img, mask = img.to(device), mask.to(device)
 
-      # Scale loss and acc
-      loss /= len(data_loader)
-      accuracy /= len(data_loader)
-      precision /= len(data_loader)
-      recall /= len(data_loader)
-      f1 /= len(data_loader)
-    return {"model_name": model.__class__.__name__,
+        # Forward Pass and Loss calculation
+        pred_mask = model(img)
+        loss += loss_fn(pred_mask, mask)
+
+        # Calculate and accumulate dice/iou metric across all batches
+        groundtruth_mask = mask.permute(0, 2, 3, 1).cpu().numpy()
+        pred_mask = pred_mask.permute(0, 2, 3, 1).cpu().detach().numpy()
+        dice_coeff = dice_coef(groundtruth_mask, pred_mask)
+        iou_coeff = iou(groundtruth_mask, pred_mask)
+          
+    # Adjust metrics to get average loss and accuracy per batch
+    loss = loss / len(data_loader)
+    dice_coeff = dice_coeff / len(data_loader)
+    iou_coeff = iou_coeff / len(data_loader)
+
+    return {"model_name": model.__class__.__name__, # onlmask works when model was created with a class
             "model_loss": loss.item(),
-            "model_accuracy": accuracy,
-            "model_precision": precision,
-            "model_recall": recall,
-            "model_f1": f1}
+            "model_dice": dice_coeff,
+            "model_iou": iou_coeff}
