@@ -1,7 +1,13 @@
+# Since datasets subclassed from torch.utils.data.Dataset return images and their corresponding label (in our case a mask image) we will need to create a custom
+# data which overrided the "getitem" function. For good practice, we will also override the "len" method. The following function define a custom dataset class
+# called SegmentationDataset, which inherits from torch.utils.data.Dataset.
+# The constructor (__init__) takes the root directory of the dataset and an optional transform argument for data augmentation
+# Depending on which split we want (train or test), we return datsets in both cases so that we can create dataloaders for both
 
 import os
 from PIL import Image
 import torch
+import torchvision
 from torchvision import transforms
 from torchvision import datasets
 from torch.utils.data import Dataset
