@@ -27,7 +27,7 @@ except ImportError:
     import utils, engine
 
 def train_eval_save(model: torch.nn.Module,
-                    train_dataloader: torch.utils.data.DataLoader
+                    train_dataloader: torch.utils.data.DataLoader,
                     test_dataLoader: torch.utils.data.DataLoader,
                     loss_fn: torch.nn.Module,
                     optimizer: torch.optim.Optimizer,
@@ -35,7 +35,7 @@ def train_eval_save(model: torch.nn.Module,
                     device: torch.device,
                     writer: torch.utils.tensorboard.writer.SummaryWriter,
                     target_dir: str,
-                    model_name: str)
+                    model_name: str):
 
   """"
   Receives a model --> trains the model --> evaluates the model --> saves the model (specifically its parameters only)
@@ -57,7 +57,7 @@ def train_eval_save(model: torch.nn.Module,
   """
 
   # Train the model
-  engine.train(model = model_0,
+  engine.train(model = model,
               train_dataloader = train_dataloader,
               test_dataloader = test_dataloader,
               optimizer = optimizer,
@@ -73,7 +73,7 @@ def train_eval_save(model: torch.nn.Module,
                               device = device)
 
   # Save Model
-  utils.save_model(model = model_0,
+  utils.save_model(model = model,
                   target_dir = target_dir,
                   model_name = model_name)
   
