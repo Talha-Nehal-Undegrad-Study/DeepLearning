@@ -63,7 +63,6 @@ def train_eval_save(model: torch.nn.Module,
               test_dataloader = test_dataloader,
               optimizer = optimizer,
               loss_fn = loss_fn,
-              num_classes = len(class_names),
               epochs = epochs,
               device = device,
               writer = writer)
@@ -72,7 +71,6 @@ def train_eval_save(model: torch.nn.Module,
   model_results = engine.eval(model = model,
                               dataloader = test_dataloader,
                               loss_fn = loss_fn,
-                              num_classes = len(class_names),
                               device = device)
 
   # Save Model
