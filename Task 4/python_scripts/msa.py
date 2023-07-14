@@ -1,5 +1,5 @@
 import torch 
-from torch imort nn
+from torch import nn
 
 # 1. Create a class that inherits from nn.Module and implements MSA 
 class MultiheadSelfAttentionBlock(nn.Module):
