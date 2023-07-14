@@ -1,6 +1,10 @@
 
 
 # 1. Create a class which subclasses nn.Module and patches 2d images
+
+import torch 
+from torch import nn
+
 class PatchEmbedding(nn.Module):
     """Turns a 2D input image into a 1D sequence learnable embedding vector.
 
