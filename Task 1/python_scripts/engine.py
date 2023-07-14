@@ -195,7 +195,7 @@ def test_step(model: torch.nn.Module,
         test_recall += rec
         test_precision += prec
         test_f1 += f1
-        test_accuracy += ac
+        test_accuracy += acc
 
     # Calculate each loss and each metric per batch
     test_loss = test_loss / len(dataloader)
