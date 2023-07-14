@@ -83,8 +83,10 @@ def train_step(model: torch.nn.Module,
       y = y.to(device)
 
       # Forward Pass (In case of Inception net, we get output and something else but we dont need that as the loss function would give an error otherwise)
+      y_logits = torch.randn([32, 23])
       if inception:
-        y_logits, _ = model.forward(X)
+        y_logits = model.forward(X)
+        y_logits = y_logits[0]
       else:
         y_logits = model.forward(X)
 
@@ -173,8 +175,10 @@ def test_step(model: torch.nn.Module,
         X = X.to(device)
         y = y.to(device)
 
+        y_logits = torch.randn([32, 23])
         if inception:
-          y_logits, _ = model.forward(X)
+          y_logits = model.forward(X)
+          y_logits = y_logits[0]
         else:
           y_logits = model.forward(X)
 
@@ -389,10 +393,12 @@ def eval_model(model: torch.nn.Module,
         X = X.to(device)
         y = y.to(device)
 
+        y_logits = torch.randn([32, 23])
         if inception:
-          y_pred, _ = model.forward(X)
+          y_logits = model.forward(X)
+          y_logits = y_logits[0]
         else:
-          y_pred = model.forward(X)
+          y_logits = model.forward(X)
 
         loss += loss_fn(y_pred, y)
           
