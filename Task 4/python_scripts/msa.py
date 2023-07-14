@@ -1,4 +1,7 @@
-# 1. Create a class that inherits from nn.Module
+import torch 
+from torch imort nn
+
+# 1. Create a class that inherits from nn.Module and implements MSA 
 class MultiheadSelfAttentionBlock(nn.Module):
     """Creates a multi-head self-attention block ("MSA block" for short).
     """
