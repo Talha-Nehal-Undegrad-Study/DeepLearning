@@ -108,7 +108,10 @@ def train_step(model: torch.nn.Module,
       num_classes = len(torch.unique(y))  
         
       # Calculate Evaluation Metrics
-      rec, prec, f1, acc = utils.calculate_metrics(y_pred_class.cpu(), y.cpu())
+      y_pred_cpu_numpy = y_pred_class.cpu().detach().numpy()
+      y_cpu_numpy = y.cpu().detach().numpy()
+      rec, prec, f1, acc = utils.calculate_metrics(y_pred_cpu_numpy, y_cpu_numpy)
+        
       train_recall += rec
       train_precision += prec
       train_f1 += f1
@@ -185,7 +188,10 @@ def test_step(model: torch.nn.Module,
         # Calculate the predicted class using softmax since multi-class and then taking argmax (on the dim = 1 since 0 corresponds to batch)
         y_pred_class = torch.argmax(torch.softmax(y_logits, dim = 1), dim = 1)
 
-        rec, prec, f1, acc = utils.calculate_metrics(y_pred_class.cpu(), y.cpu())
+        y_pred_cpu_numpy = y_pred_class.cpu().detach().numpy()
+        y_cpu_numpy = y.cpu().detach().numpy()
+        rec, prec, f1, acc = utils.calculate_metrics(y_pred_cpu_numpy, y_cpu_numpy)
+          
         test_recall += rec
         test_precision += prec
         test_f1 += f1
@@ -395,9 +401,10 @@ def eval_model(model: torch.nn.Module,
           
         y_pred_class = torch.argmax(torch.softmax(y_pred, dim = 1), dim = 1)
 
-        y_pred_class = torch.argmax(torch.softmax(y_pred, dim = 1), dim = 1)
-
-        rec, prec, f1, acc = utils.calculate_metrics(y_pred_class.cpu(), y.cpu())
+        y_pred_cpu_numpy = y_pred_class.cpu().detach().numpy()
+        y_cpu_numpy = y.cpu().detach().numpy()
+        rec, prec, f1, acc = utils.calculate_metrics(y_pred_cpu_numpy, y_cpu_numpy)
+          
         recall += rec
         precision += prec
         f1 += f1
