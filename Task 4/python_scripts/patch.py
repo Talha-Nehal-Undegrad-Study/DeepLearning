@@ -1,7 +1,6 @@
 
-# Let's use the patch.py class to create a patch embedding which contains all that we have done till now but in one single sequence
 
-# 1. Create a class which subclasses nn.Module
+# 1. Create a class which subclasses nn.Module and patches 2d images
 class PatchEmbedding(nn.Module):
     """Turns a 2D input image into a 1D sequence learnable embedding vector.
 
@@ -34,7 +33,7 @@ class PatchEmbedding(nn.Module):
     def forward(self, x):
         # Create assertion to check that inputs are the correct shape
         image_resolution = x.shape[-1]
-        assert image_resolution % patch_size == 0, f"Input image size must be divisble by patch size, image shape: {image_resolution}, patch size: {patch_size}"
+        assert image_resolution % self.patch_size == 0, f"Input image size must be divisble by patch size, image shape: {image_resolution}, patch size: {self.patch_size}"
 
         # Perform the forward pass
         x_patched = self.patcher(x)
