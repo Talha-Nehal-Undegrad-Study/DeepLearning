@@ -28,7 +28,7 @@ except ImportError:
 
 def train_eval_save(model: torch.nn.Module,
                     train_dataloader: torch.utils.data.DataLoader,
-                    test_dataLoader: torch.utils.data.DataLoader,
+                    test_dataloader: torch.utils.data.DataLoader,
                     loss_fn: torch.nn.Module,
                     optimizer: torch.optim.Optimizer,
                     epochs: int,
@@ -67,8 +67,8 @@ def train_eval_save(model: torch.nn.Module,
               writer = writer)
 
   # Evaluate the model and store results
-  model_results = engine.eval(model = model,
-                              dataloader = test_dataloader,
+  model_results = engine.eval_model(model = model,
+                              data_loader = test_dataloader,
                               loss_fn = loss_fn,
                               device = device)
 

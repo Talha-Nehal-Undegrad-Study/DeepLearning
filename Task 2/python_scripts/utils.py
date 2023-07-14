@@ -5,6 +5,7 @@ from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 import os
 from torch import nn
+from pathlib import Path
 
 # Defining a function to save the model
 def save_model(model: torch.nn.Module,
