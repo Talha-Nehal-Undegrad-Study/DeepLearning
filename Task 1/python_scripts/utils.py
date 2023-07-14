@@ -6,6 +6,8 @@ from datetime import datetime
 import os
 from torch import nn
 from pathlib import Path
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+
 
 # Defining a function to save the model
 def save_model(model: torch.nn.Module,
@@ -77,6 +79,19 @@ def create_writer(experiment_name: str,
     print(f"[INFO] Created SummaryWriter, saving to: {log_dir}...")
     return SummaryWriter(log_dir = log_dir)
 
+# Defining a function which returns all the metrics
+def calculate_metrics(predicted_labels, ground_truth_labels):
+    # Convert the tensors to numpy arrays if necessary
+    predicted_labels = predicted_labels.numpy() if isinstance(predicted_labels, torch.Tensor) else predicted_labels
+    ground_truth_labels = ground_truth_labels.numpy() if isinstance(ground_truth_labels, torch.Tensor) else ground_truth_labels
+    
+    # Calculate the metrics
+    precision = precision_score(ground_truth_labels, predicted_labels, average = 'macro')
+    recall = recall_score(ground_truth_labels, predicted_labels, average = 'macro')
+    f1 = f1_score(ground_truth_labels, predicted_labels, average = 'macro')
+    accuracy = accuracy_score(ground_truth_labels, predicted_labels)
+    
+    return recall, precision, f1, accuracy
 
 # Defining a function to print the time taken to train a model
 def time_taken(start, end):
