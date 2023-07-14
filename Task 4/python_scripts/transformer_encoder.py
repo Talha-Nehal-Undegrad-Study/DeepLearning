@@ -1,7 +1,7 @@
 
 import torch
 from torch import nn
-
+import subprocess
 # Import relevant msa and mlp block scripts
 
 
