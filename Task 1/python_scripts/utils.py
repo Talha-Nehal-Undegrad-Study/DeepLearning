@@ -82,8 +82,8 @@ def create_writer(experiment_name: str,
 # Defining a function which returns all the metrics
 def calculate_metrics(predicted_labels, ground_truth_labels):
     # Convert the tensors to numpy arrays if necessary
-    predicted_labels = predicted_labels.numpy() if isinstance(predicted_labels, torch.Tensor) else predicted_labels
-    ground_truth_labels = ground_truth_labels.numpy() if isinstance(ground_truth_labels, torch.Tensor) else ground_truth_labels
+    predicted_labels = predicted_labels.cpu().detach().numpy() if isinstance(predicted_labels, torch.Tensor) else predicted_labels
+    ground_truth_labels = ground_truth_labels.cpu().detach().numpy() if isinstance(ground_truth_labels, torch.Tensor) else ground_truth_labels
     
     # Calculate the metrics
     precision = precision_score(ground_truth_labels, predicted_labels, average = 'macro')
