@@ -150,8 +150,8 @@ def test_step(model: torch.nn.Module,
 
         groundtruth_mask = mask.permute(0, 2, 3, 1).cpu().numpy()
         pred_mask = pred_mask.permute(0, 2, 3, 1).cpu().detach().numpy()
-        dice_coeff = round(dice_coef(groundtruth_mask, pred_mask), 4)
-        iou_coeff = round(iou(groundtruth_mask, pred_mask), 4)
+        dice_coeff = round(utils.dice_coef(groundtruth_mask, pred_mask), 4)
+        iou_coeff = round(utils.iou(groundtruth_mask, pred_mask), 4)
 
     # Adjust metrics to get average loss and accuracy per batch
     test_loss = test_loss / len(dataloader)
@@ -309,8 +309,8 @@ def eval_model(model: torch.nn.Module,
         # Calculate and accumulate dice/iou metric across all batches
         groundtruth_mask = mask.permute(0, 2, 3, 1).cpu().numpy()
         pred_mask = pred_mask.permute(0, 2, 3, 1).cpu().detach().numpy()
-        dice_coeff = dice_coef(groundtruth_mask, pred_mask)
-        iou_coeff = iou(groundtruth_mask, pred_mask)
+        dice_coeff = utils.dice_coef(groundtruth_mask, pred_mask)
+        iou_coeff = utils.iou(groundtruth_mask, pred_mask)
           
     # Adjust metrics to get average loss and accuracy per batch
     loss = loss / len(data_loader)
