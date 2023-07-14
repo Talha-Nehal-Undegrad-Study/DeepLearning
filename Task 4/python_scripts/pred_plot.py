@@ -39,7 +39,7 @@ def pred_and_plot_image(
     """
 
     # get class and their respective index as a dictionary
-    class_dict = train_data.class_to_idx
+    class_dict = data.class_to_idx
 
     # Initialize test images and test labels as a list to iterate inferenc over
     test_labels = []
