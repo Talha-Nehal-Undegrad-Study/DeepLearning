@@ -1,3 +1,4 @@
+# 1. Create a ViT class that inherits from nn.Module which implements the complete vit architecture according to the original paper
 
 import torch
 from torch import nn
@@ -12,8 +13,6 @@ except ImportError:
     subprocess.run(["mv", "DeepLearning/Task 4/python_scripts", "py_scripts"])
     sys.path.append('py_scripts')
     import patch, msa, mlp, transformer_encoder
-
-# 1. Create a ViT class that inherits from nn.Module which implements the complete vit architecture according to the original paper
 
 class ViT(nn.Module):
     """Creates a Vision Transformer architecture with ViT-Base hyperparameters by default."""
