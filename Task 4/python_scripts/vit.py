@@ -2,7 +2,8 @@
 
 import torch
 from torch import nn
-
+import subprocess
+import sys
 # Get relevant patch, msa, mlp and transformer encoder scripts
 
 try:
