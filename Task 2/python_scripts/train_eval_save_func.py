@@ -67,7 +67,7 @@ def train_eval_save(model: torch.nn.Module,
               writer = writer)
 
   # Evaluate the model and store results
-  model_results = engine.eval(model = model,
+  model_results = engine.eval_model(model = model,
                               dataloader = test_dataloader,
                               loss_fn = loss_fn,
                               device = device)
