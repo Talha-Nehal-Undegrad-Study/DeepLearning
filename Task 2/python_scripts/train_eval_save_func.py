@@ -28,7 +28,7 @@ except ImportError:
 
 def train_eval_save(model: torch.nn.Module,
                     train_dataloader: torch.utils.data.DataLoader,
-                    test_dataLoader: torch.utils.data.DataLoader,
+                    test_dataloader: torch.utils.data.DataLoader,
                     loss_fn: torch.nn.Module,
                     optimizer: torch.optim.Optimizer,
                     epochs: int,
