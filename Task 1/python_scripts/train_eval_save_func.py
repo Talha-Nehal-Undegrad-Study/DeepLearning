@@ -37,7 +37,7 @@ def train_eval_save(model: torch.nn.Module,
                     writer: torch.utils.tensorboard.writer.SummaryWriter,
                     target_dir: str,
                     model_name: str,
-                    inception = False)
+                    inception = False):
 
   """"
   Receives a model --> trains the model --> evaluates the model --> saves the model (specifically its parameters only)
