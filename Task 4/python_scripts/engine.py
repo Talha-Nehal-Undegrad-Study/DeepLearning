@@ -400,12 +400,12 @@ def eval_model(model: torch.nn.Module,
         else:
           y_logits = model.forward(X)
 
-        loss += loss_fn(y_pred, y)
+        loss += loss_fn(y_logits, y)
           
         # Get num_classes as the number of unique elements in y
         num_classes = len(torch.unique(y))
           
-        y_pred_class = torch.argmax(torch.softmax(y_pred, dim = 1), dim = 1)
+        y_pred_class = torch.argmax(torch.softmax(y_logits, dim = 1), dim = 1)
 
         y_pred_cpu_numpy = y_pred_class.cpu().numpy()
         y_cpu_numpy = y.cpu().numpy()
