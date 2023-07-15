@@ -178,7 +178,7 @@ def test_step(model: torch.nn.Module,
         y_logits = torch.randn([32, 23])
         if inception:
           y_logits = model.forward(X)
-          y_logits = y_logits[0]
+          # y_logits = y_logits[0]
         else:
           y_logits = model.forward(X)
 
@@ -396,7 +396,7 @@ def eval_model(model: torch.nn.Module,
         y_logits = torch.randn([32, 23])
         if inception:
           y_logits = model.forward(X)
-          y_logits = y_logits[0]
+          # y_logits = y_logits[0]
         else:
           y_logits = model.forward(X)
 
