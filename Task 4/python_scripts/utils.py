@@ -86,9 +86,9 @@ def calculate_metrics(predicted_labels, ground_truth_labels):
     # ground_truth_labels = ground_truth_labels.numpy() if isinstance(ground_truth_labels, torch.Tensor) else ground_truth_labels
     
     # Calculate the metrics
-    precision = precision_score(ground_truth_labels, predicted_labels, average = 'macro')
-    recall = recall_score(ground_truth_labels, predicted_labels, average = 'macro')
-    f1 = f1_score(ground_truth_labels, predicted_labels, average = 'macro')
+    precision = precision_score(ground_truth_labels, predicted_labels, average = 'macro', zero_division = 0)
+    recall = recall_score(ground_truth_labels, predicted_labels, average = 'macro', zero_division = 0)
+    f1 = f1_score(ground_truth_labels, predicted_labels, average = 'macro', zero_division = 0)
     accuracy = accuracy_score(ground_truth_labels, predicted_labels)
     
     return recall, precision, f1, accuracy
