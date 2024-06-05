@@ -1,4 +1,4 @@
-# Deep Learning Programming Tasks
+# Deep Learning for Computer Vision
 
 ## Task 1: Image Classification with CNNs
 - **Dataset and Objective:** We created a model to predict the breed of a dog or cat, given an input image. The dataset can be downloaded from [here](https://www.kaggle.com/datasets/aseemdandgaval/23-pet-breeds-image-classification).
